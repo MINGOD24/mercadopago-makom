@@ -30,14 +30,25 @@ export async function POST(req: NextRequest) {
 
   const colLetter = String.fromCharCode(65 + colIndex);
 
-  // Prepara los datos: cada valor en su propio array
+  // Calcula total pagado
+  const totalPagado =
+    (body.general * 36000) +
+    (body.ninos * 18000) +
+    (body.donacion * 36000);
+
+  // Prepara los datos para el Excel
   const values = [
-    [body.email],
-    [body.contacto],
-    ...body.nombres.map((n: any) => [`${n.nombre} - ${n.sexo}`])
+    [`Correo: ${body.email}`],
+    [`Teléfono: ${body.contacto}`],
+    [`RUT: ${body.rut}`],
+    [`Cantidad de donaciones: ${body.donacion}`],
+    [`Total pagado: $${totalPagado.toLocaleString()} CLP`],
+    ...body.nombres.map((n: any) => [
+      `Nombre: ${n.nombre} | Apellido: ${n.apellido} | Género: ${n.genero} | Tipo: ${n.tipoEntrada}`,
+    ]),
   ];
 
-  // Escribe verticalmente
+  // Escribe los datos en la columna vacía
   await sheets.spreadsheets.values.update({
     spreadsheetId,
     range: `${colLetter}1`,

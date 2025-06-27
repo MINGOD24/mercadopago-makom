@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { Plus, Minus } from 'lucide-react';
+import { Plus, Minus, Info } from 'lucide-react';
 import 'react-phone-number-input/style.css';
 import PhoneInput from 'react-phone-number-input';
 
@@ -8,6 +8,12 @@ const precios = {
   general: 36000,
   ninos: 18000,
   donacion: 36000,
+};
+
+const infoEntradas = {
+  ninos: 'Entre 4-11 años. Incluye entretención y comida. Sin asiento.',
+  bebes: 'Entre 0-3 años. Sin asiento.',
+  gratuito: 'Para personas sin posibilidad de pago.',
 };
 
 export default function Home() {
@@ -19,7 +25,13 @@ export default function Home() {
     gratuito: 0,
     contacto: '',
     email: '',
-    nombres: [] as { nombre: string; sexo: string }[],
+    rut: '',
+    nombres: [] as {
+      nombre: string;
+      apellido: string;
+      genero: string;
+      tipoEntrada: string;
+    }[],
   });
 
   const [loading, setLoading] = useState(false);
@@ -30,43 +42,52 @@ export default function Home() {
     precios.ninos * form.ninos +
     precios.donacion * form.donacion;
 
-  const totalPagados =
-    form.general + form.ninos + form.donacion;
-  const totalGratuitos = form.bebes + form.gratuito;
-  const totalEntradas = totalPagados + totalGratuitos;
+  const totalEntradas =
+    form.general + form.ninos + form.bebes + form.gratuito;
 
   useEffect(() => {
+    const tipos = [
+      ...Array(form.general).fill('General'),
+      ...Array(form.ninos).fill('Niños'),
+      ...Array(form.bebes).fill('Bebé'),
+      ...Array(form.gratuito).fill('Gratuito'),
+    ];
+
     setForm((prev) => ({
       ...prev,
-      nombres: Array.from({ length: totalEntradas }, (_, i) => ({
+      nombres: tipos.map((tipo, i) => ({
         nombre: prev.nombres[i]?.nombre || '',
-        sexo: prev.nombres[i]?.sexo || '',
+        apellido: prev.nombres[i]?.apellido || '',
+        genero: prev.nombres[i]?.genero || '',
+        tipoEntrada: tipo,
       })),
     }));
-  }, [form.general, form.ninos, form.donacion, form.bebes, form.gratuito]);
+  }, [form.general, form.ninos, form.bebes, form.gratuito]);
 
   const handleSubmit = async () => {
     setError('');
 
-    if (totalEntradas === 0) {
-      setError('Debes seleccionar al menos una entrada.');
+    if (totalEntradas === 0 && form.donacion === 0) {
+      setError('Debes seleccionar al menos una entrada o una donación.');
       return;
     }
 
-    if (!form.contacto || !form.email.trim()) {
-      setError('El teléfono y el correo son obligatorios.');
+    if (!form.contacto || !form.email.trim() || !form.rut.trim()) {
+      setError('El teléfono, correo y RUT son obligatorios.');
       return;
     }
 
-    if (form.nombres.some((n) => !n.nombre.trim() || !n.sexo.trim())) {
-      setError('Todos los nombres y sexos son obligatorios.');
+    if (
+      form.nombres.some(
+        (n) => !n.nombre.trim() || !n.apellido.trim() || !n.genero.trim()
+      )
+    ) {
+      setError('Todos los nombres, apellidos y géneros son obligatorios.');
       return;
     }
 
     setLoading(true);
-
     const payload = { ...form };
-
     sessionStorage.setItem('ticketInfo', JSON.stringify(payload));
 
     if (totalPago === 0) {
@@ -87,13 +108,29 @@ export default function Home() {
     setLoading(false);
   };
 
-  const TicketSelector = ({ label, value, onChange }: {
+  const TicketSelector = ({
+    label,
+    value,
+    onChange,
+    info,
+  }: {
     label: string;
     value: number;
     onChange: (val: number) => void;
+    info?: string;
   }) => (
     <div className="flex items-center justify-between">
-      <span className="font-medium text-gray-700">{label}</span>
+      <div className="flex items-center gap-1">
+        <span className="font-medium text-gray-700">{label}</span>
+        {info && (
+          <div className="group relative cursor-pointer">
+            <Info className="w-4 h-4 text-gray-400" />
+            <div className="absolute bottom-full mb-1 hidden group-hover:block bg-gray-700 text-white text-xs rounded p-1 max-w-xs">
+              {info}
+            </div>
+          </div>
+        )}
+      </div>
       <div className="flex items-center gap-2">
         <button
           onClick={() => onChange(Math.max(0, value - 1))}
@@ -114,8 +151,7 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-green-100 via-blue-100 to-indigo-100 flex flex-col items-center">
-      <section className="w-full max-w-xl min-w-[450px] bg-white p-8 mt-6 rounded-2xl shadow-lg">
-
+      <section className="w-full max-w-xl min-w-[280px] bg-white p-4 sm:p-8 mt-6 rounded-2xl shadow-lg">
         <h2 className="text-2xl font-semibold text-[#1f3b82] mb-6 text-center">
           Reserva tus entradas
         </h2>
@@ -133,9 +169,10 @@ export default function Home() {
             onChange={(v) => setForm({ ...form, general: v })}
           />
           <TicketSelector
-            label={`Entrada Niños (4-11) ($${precios.ninos.toLocaleString()})`}
+            label={`Entrada Niños ($${precios.ninos.toLocaleString()})`}
             value={form.ninos}
             onChange={(v) => setForm({ ...form, ninos: v })}
+            info={infoEntradas.ninos}
           />
           <TicketSelector
             label={`Donar entrada ($${precios.donacion.toLocaleString()})`}
@@ -143,78 +180,98 @@ export default function Home() {
             onChange={(v) => setForm({ ...form, donacion: v })}
           />
           <TicketSelector
-            label="Entrada Bebés (0-3) gratis"
+            label="Entrada Bebés ($0)"
             value={form.bebes}
             onChange={(v) => setForm({ ...form, bebes: v })}
+            info={infoEntradas.bebes}
           />
           <TicketSelector
-            label="No puedo pagar (gratis)"
+            label="No puedo pagar ($0)"
             value={form.gratuito}
             onChange={(v) => setForm({ ...form, gratuito: v })}
+            info={infoEntradas.gratuito}
           />
 
           <div className="flex flex-col">
-            <label className="text-sm font-medium text-gray-700 mb-1">
-              Teléfono
-            </label>
+            <label className="text-sm font-medium text-gray-700 mb-1">Teléfono</label>
             <PhoneInput
               international
               defaultCountry="CL"
               value={form.contacto}
               onChange={(val) => setForm({ ...form, contacto: val || '' })}
-              className="p-2 border border-gray-300 rounded"
+              className="w-full p-2 border border-gray-300 rounded"
             />
           </div>
 
           <div className="flex flex-col">
-            <label className="text-sm font-medium text-gray-700 mb-1">
-              Correo
-            </label>
+            <label className="text-sm font-medium text-gray-700 mb-1">Correo</label>
             <input
               type="email"
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
-              className="p-2 border border-gray-300 rounded"
+              className="w-full p-2 border border-gray-300 rounded"
+            />
+          </div>
+
+          <div className="flex flex-col">
+            <label className="text-sm font-medium text-gray-700 mb-1">RUT</label>
+            <input
+              type="text"
+              value={form.rut}
+              onChange={(e) => setForm({ ...form, rut: e.target.value })}
+              className="w-full p-2 border border-gray-300 rounded"
             />
           </div>
         </div>
 
         {form.nombres.length > 0 && (
           <div className="mt-6">
-            <h3 className="text-lg font-semibold text-[#1f3b82] mb-2">
-              Datos de asistentes
-            </h3>
-            <div className="flex flex-col gap-3">
+            <h3 className="text-lg font-semibold text-[#1f3b82] mb-2">Datos de asistentes</h3>
+            <div className="flex flex-col gap-4">
               {form.nombres.map((n, i) => (
-                <div key={i} className="grid grid-cols-2 gap-3">
-                  <input
-                    className="p-2 border rounded"
-                    placeholder={`Nombre ${i + 1}`}
-                    value={n.nombre}
-                    onChange={(e) =>
-                      setForm((p) => {
-                        const upd = [...p.nombres];
-                        upd[i].nombre = e.target.value;
-                        return { ...p, nombres: upd };
-                      })
-                    }
-                  />
-                  <select
-                    className="p-2 border rounded"
-                    value={n.sexo}
-                    onChange={(e) =>
-                      setForm((p) => {
-                        const upd = [...p.nombres];
-                        upd[i].sexo = e.target.value;
-                        return { ...p, nombres: upd };
-                      })
-                    }
-                  >
-                    <option value="">Sexo</option>
-                    <option value="Masculino">Masculino</option>
-                    <option value="Femenino">Femenino</option>
-                    <option value="Otro">Otro</option>
-                  </select>
+                <div key={i} className="flex flex-col gap-1">
+                  <span className="text-sm text-gray-500 font-medium">Tipo de entrada: {n.tipoEntrada}</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <input
+                      className="w-full p-2 border rounded"
+                      placeholder="Nombre"
+                      value={n.nombre}
+                      onChange={(e) =>
+                        setForm((p) => {
+                          const upd = [...p.nombres];
+                          upd[i].nombre = e.target.value;
+                          return { ...p, nombres: upd };
+                        })
+                      }
+                    />
+                    <input
+                      className="w-full p-2 border rounded"
+                      placeholder="Apellido"
+                      value={n.apellido}
+                      onChange={(e) =>
+                        setForm((p) => {
+                          const upd = [...p.nombres];
+                          upd[i].apellido = e.target.value;
+                          return { ...p, nombres: upd };
+                        })
+                      }
+                    />
+                    <select
+                      className="w-full p-2 border rounded"
+                      value={n.genero}
+                      onChange={(e) =>
+                        setForm((p) => {
+                          const upd = [...p.nombres];
+                          upd[i].genero = e.target.value;
+                          return { ...p, nombres: upd };
+                        })
+                      }
+                    >
+                      <option value="">Género</option>
+                      <option value="Masculino">Masculino</option>
+                      <option value="Femenino">Femenino</option>
+                    </select>
+                  </div>
                 </div>
               ))}
             </div>
