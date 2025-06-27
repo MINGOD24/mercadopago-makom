@@ -1,103 +1,244 @@
-import Image from "next/image";
+'use client';
+import { useState, useEffect } from 'react';
+import { Plus, Minus } from 'lucide-react';
+import 'react-phone-number-input/style.css';
+import PhoneInput from 'react-phone-number-input';
+
+const precios = {
+  general: 36000,
+  ninos: 18000,
+  donacion: 36000,
+};
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [form, setForm] = useState({
+    general: 0,
+    ninos: 0,
+    donacion: 0,
+    bebes: 0,
+    gratuito: 0,
+    contacto: '',
+    email: '',
+    nombres: [] as { nombre: string; sexo: string }[],
+  });
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const totalPago =
+    precios.general * form.general +
+    precios.ninos * form.ninos +
+    precios.donacion * form.donacion;
+
+  const totalPagados =
+    form.general + form.ninos + form.donacion;
+  const totalGratuitos = form.bebes + form.gratuito;
+  const totalEntradas = totalPagados + totalGratuitos;
+
+  useEffect(() => {
+    setForm((prev) => ({
+      ...prev,
+      nombres: Array.from({ length: totalEntradas }, (_, i) => ({
+        nombre: prev.nombres[i]?.nombre || '',
+        sexo: prev.nombres[i]?.sexo || '',
+      })),
+    }));
+  }, [form.general, form.ninos, form.donacion, form.bebes, form.gratuito]);
+
+  const handleSubmit = async () => {
+    setError('');
+
+    if (totalEntradas === 0) {
+      setError('Debes seleccionar al menos una entrada.');
+      return;
+    }
+
+    if (!form.contacto || !form.email.trim()) {
+      setError('El teléfono y el correo son obligatorios.');
+      return;
+    }
+
+    if (form.nombres.some((n) => !n.nombre.trim() || !n.sexo.trim())) {
+      setError('Todos los nombres y sexos son obligatorios.');
+      return;
+    }
+
+    setLoading(true);
+
+    const payload = { ...form };
+
+    sessionStorage.setItem('ticketInfo', JSON.stringify(payload));
+
+    if (totalPago === 0) {
+      await fetch('/api/store-data', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+      window.location.href = '/success';
+    } else {
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+      const { init_point } = await res.json();
+      if (init_point) window.location.href = init_point;
+    }
+
+    setLoading(false);
+  };
+
+  const TicketSelector = ({ label, value, onChange }: {
+    label: string;
+    value: number;
+    onChange: (val: number) => void;
+  }) => (
+    <div className="flex items-center justify-between">
+      <span className="font-medium text-gray-700">{label}</span>
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => onChange(Math.max(0, value - 1))}
+          className="bg-gray-200 rounded-full p-1 hover:bg-gray-300"
         >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+          <Minus className="w-4 h-4" />
+        </button>
+        <span className="w-8 text-center">{value}</span>
+        <button
+          onClick={() => onChange(value + 1)}
+          className="bg-gray-200 rounded-full p-1 hover:bg-gray-300"
         >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+          <Plus className="w-4 h-4" />
+        </button>
+      </div>
     </div>
+  );
+
+  return (
+    <main className="min-h-screen bg-gradient-to-br from-green-100 via-blue-100 to-indigo-100 flex flex-col items-center">
+      <section className="w-full max-w-xl min-w-[450px] bg-white p-8 mt-6 rounded-2xl shadow-lg">
+
+        <h2 className="text-2xl font-semibold text-[#1f3b82] mb-6 text-center">
+          Reserva tus entradas
+        </h2>
+
+        {error && (
+          <div className="bg-red-100 text-red-700 p-2 mb-4 rounded">
+            {error}
+          </div>
+        )}
+
+        <div className="grid gap-4 text-sm">
+          <TicketSelector
+            label={`Entrada General ($${precios.general.toLocaleString()})`}
+            value={form.general}
+            onChange={(v) => setForm({ ...form, general: v })}
+          />
+          <TicketSelector
+            label={`Entrada Niños (4-11) ($${precios.ninos.toLocaleString()})`}
+            value={form.ninos}
+            onChange={(v) => setForm({ ...form, ninos: v })}
+          />
+          <TicketSelector
+            label={`Donar entrada ($${precios.donacion.toLocaleString()})`}
+            value={form.donacion}
+            onChange={(v) => setForm({ ...form, donacion: v })}
+          />
+          <TicketSelector
+            label="Entrada Bebés (0-3) gratis"
+            value={form.bebes}
+            onChange={(v) => setForm({ ...form, bebes: v })}
+          />
+          <TicketSelector
+            label="No puedo pagar (gratis)"
+            value={form.gratuito}
+            onChange={(v) => setForm({ ...form, gratuito: v })}
+          />
+
+          <div className="flex flex-col">
+            <label className="text-sm font-medium text-gray-700 mb-1">
+              Teléfono
+            </label>
+            <PhoneInput
+              international
+              defaultCountry="CL"
+              value={form.contacto}
+              onChange={(val) => setForm({ ...form, contacto: val || '' })}
+              className="p-2 border border-gray-300 rounded"
+            />
+          </div>
+
+          <div className="flex flex-col">
+            <label className="text-sm font-medium text-gray-700 mb-1">
+              Correo
+            </label>
+            <input
+              type="email"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+              className="p-2 border border-gray-300 rounded"
+            />
+          </div>
+        </div>
+
+        {form.nombres.length > 0 && (
+          <div className="mt-6">
+            <h3 className="text-lg font-semibold text-[#1f3b82] mb-2">
+              Datos de asistentes
+            </h3>
+            <div className="flex flex-col gap-3">
+              {form.nombres.map((n, i) => (
+                <div key={i} className="grid grid-cols-2 gap-3">
+                  <input
+                    className="p-2 border rounded"
+                    placeholder={`Nombre ${i + 1}`}
+                    value={n.nombre}
+                    onChange={(e) =>
+                      setForm((p) => {
+                        const upd = [...p.nombres];
+                        upd[i].nombre = e.target.value;
+                        return { ...p, nombres: upd };
+                      })
+                    }
+                  />
+                  <select
+                    className="p-2 border rounded"
+                    value={n.sexo}
+                    onChange={(e) =>
+                      setForm((p) => {
+                        const upd = [...p.nombres];
+                        upd[i].sexo = e.target.value;
+                        return { ...p, nombres: upd };
+                      })
+                    }
+                  >
+                    <option value="">Sexo</option>
+                    <option value="Masculino">Masculino</option>
+                    <option value="Femenino">Femenino</option>
+                    <option value="Otro">Otro</option>
+                  </select>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="mt-6 text-center">
+          <div className="inline-block bg-yellow-300 text-yellow-900 font-bold text-lg px-4 py-2 rounded shadow">
+            Total a pagar: ${totalPago.toLocaleString()} CLP
+          </div>
+        </div>
+
+        <button
+          onClick={handleSubmit}
+          disabled={loading}
+          className={`mt-8 w-full py-3 rounded-lg font-semibold transition-colors ${
+            loading
+              ? 'bg-gray-400 cursor-not-allowed'
+              : 'bg-[#1f3b82] text-white hover:bg-[#3355aa]'
+          }`}
+        >
+          {loading ? 'Procesando...' : 'Confirmar reserva'}
+        </button>
+      </section>
+    </main>
   );
 }
