@@ -43,9 +43,9 @@ export async function POST(req: NextRequest) {
     console.log('💡 Enviando preferencia a Mercado Pago:', JSON.stringify(preferenceBody, null, 2));
 
 
-    const { sandbox_init_point, init_point } = await preferenceClient.create({ body: preferenceBody });
+    const { init_point } = await preferenceClient.create({ body: preferenceBody });
 
-    return NextResponse.json({ init_point: sandbox_init_point ?? init_point });
+    return NextResponse.json({ init_point: init_point });
   } catch (err: any) {
     console.error('Mercado Pago error:', err);
     return NextResponse.json(
