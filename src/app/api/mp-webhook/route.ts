@@ -5,11 +5,10 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     console.log('🔔 Webhook recibido:', JSON.stringify(body, null, 2));
-    // Verifica que sea un evento de pago
+
     if (body.type === 'payment' && body.data?.id) {
       const paymentId = body.data.id;
 
-      // Obtiene los detalles del pago desde Mercado Pago
       const mpRes = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
         headers: {
           Authorization: `Bearer ${process.env.MERCADO_PAGO_ACCESS_TOKEN!}`,
@@ -27,6 +26,10 @@ export async function POST(req: NextRequest) {
       if (payment.status === 'approved') {
         await guardarEnGoogleSheets(payment.metadata, payment.transaction_amount);
       }
+    }
+
+    if (body.type === 'manual_free') {
+      await guardarEnGoogleSheets(body.metadata, 0);
     }
 
     return NextResponse.json({ status: 'ok' });
@@ -49,7 +52,6 @@ async function guardarEnGoogleSheets(metadata: any, totalPagado: number) {
   const sheets = google.sheets({ version: 'v4', auth });
   const spreadsheetId = process.env.GOOGLE_SHEET_ID!;
 
-  // Encuentra la primera columna vacía
   const getCols = await sheets.spreadsheets.values.get({
     spreadsheetId,
     range: 'A:Z',
