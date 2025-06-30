@@ -11,17 +11,51 @@ export async function POST(req: NextRequest) {
     const data = await req.json();
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL!;
-    console.log('USANDO BASE_URL:', baseUrl);  // 👈 ADD THIS LINE
+    console.log('USANDO BASE_URL:', baseUrl);
 
     if (!baseUrl) throw new Error('NEXT_PUBLIC_BASE_URL no está definido');
 
-    const items = [];
+    const items: {
+      id: string;
+      title: string;
+      unit_price: number;
+      quantity: number;
+      currency_id: string;
+    }[] = [];
+
     if (data.general > 0)
-      items.push({ id: 'general', title: 'Entrada General', unit_price: 1000, quantity: +data.general, currency_id: 'CLP' });
+      items.push({
+        id: 'general',
+        title: 'Entrada General',
+        unit_price: 1000,
+        quantity: +data.general,
+        currency_id: 'CLP',
+      });
+
     if (data.ninos > 0)
-      items.push({ id: 'ninos', title: 'Entrada Niños (4-11)', unit_price: 18000, quantity: +data.ninos, currency_id: 'CLP' });
+      items.push({
+        id: 'ninos',
+        title: 'Entrada Niños (4-11)',
+        unit_price: 18000,
+        quantity: +data.ninos,
+        currency_id: 'CLP',
+      });
+
     if (data.donacion > 0)
-      items.push({ id: 'donacion', title: 'Donación Entrada', unit_price: 1000, quantity: +data.donacion, currency_id: 'CLP' });
+      items.push({
+        id: 'donacion',
+        title: 'Donación Entrada',
+        unit_price: 36000,
+        quantity: +data.donacion,
+        currency_id: 'CLP',
+      });
+
+    if (items.length === 0) {
+      return NextResponse.json(
+        { message: 'No se enviaron items válidos.' },
+        { status: 400 }
+      );
+    }
 
     const preferenceBody = {
       items,
@@ -30,10 +64,12 @@ export async function POST(req: NextRequest) {
         failure: `${baseUrl}/failure`,
         pending: `${baseUrl}/pending`,
       },
-      //uto_return: 'approved' as const,
+      auto_return: 'approved' as const,
       metadata: {
         contacto: data.contacto,
         email: data.email,
+        rut: data.rut,
+        donacion: data.donacion,
         nombres: data.nombres,
       },
       notification_url: `${baseUrl}/api/mp-webhook`,
@@ -42,10 +78,9 @@ export async function POST(req: NextRequest) {
 
     console.log('💡 Enviando preferencia a Mercado Pago:', JSON.stringify(preferenceBody, null, 2));
 
-
     const { init_point } = await preferenceClient.create({ body: preferenceBody });
 
-    return NextResponse.json({ init_point: init_point });
+    return NextResponse.json({ init_point });
   } catch (err: any) {
     console.error('Mercado Pago error:', err);
     return NextResponse.json(

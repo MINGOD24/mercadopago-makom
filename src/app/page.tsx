@@ -16,6 +16,45 @@ const infoEntradas = {
   gratuito: 'Para personas sin posibilidad de pago.',
 };
 
+export function InfoTooltip({ info }: { info: string }) {
+  const [show, setShow] = useState(false);
+  const [isTouch, setIsTouch] = useState(false);
+
+  useEffect(() => {
+    // Detecta si el dispositivo es touch
+    const touch = window.matchMedia('(pointer: coarse)').matches;
+    setIsTouch(touch);
+  }, []);
+
+  return (
+    <div className="relative inline-block">
+      {isTouch ? (
+        <button
+          type="button"
+          onClick={() => setShow(!show)}
+          className="focus:outline-none"
+        >
+          <Info className="w-4 h-4 text-gray-400" />
+        </button>
+      ) : (
+        <div className="group relative">
+          <Info className="w-4 h-4 text-gray-400" />
+          <div className="absolute z-10 bottom-full mb-1 hidden group-hover:block bg-gray-700 text-white text-xs rounded p-1 max-w-xs">
+            {info}
+          </div>
+        </div>
+      )}
+
+      {isTouch && show && (
+        <div className="absolute z-10 bottom-full mb-1 bg-gray-700 text-white text-xs rounded p-1 max-w-xs">
+          {info}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 export default function Home() {
   const [form, setForm] = useState({
     general: 0,
@@ -122,14 +161,7 @@ export default function Home() {
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-1">
         <span className="font-medium text-gray-700">{label}</span>
-        {info && (
-          <div className="group relative cursor-pointer">
-            <Info className="w-4 h-4 text-gray-400" />
-            <div className="absolute bottom-full mb-1 hidden group-hover:block bg-gray-700 text-white text-xs rounded p-1 max-w-xs">
-              {info}
-            </div>
-          </div>
-        )}
+        {info && <InfoTooltip info={info} />}
       </div>
       <div className="flex items-center gap-2">
         <button
