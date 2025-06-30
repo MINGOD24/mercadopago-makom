@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
       items.push({
         id: 'general',
         title: 'Entrada General',
-        unit_price: 1000,
+        unit_price: 100,
         quantity: +data.general,
         currency_id: 'CLP',
       });
