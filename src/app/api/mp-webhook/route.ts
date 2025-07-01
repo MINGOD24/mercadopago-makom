@@ -74,7 +74,7 @@ async function guardarEnGoogleSheets(metadata: any, totalPagado: number) {
     [`Cantidad de donaciones: ${metadata.donacion || 0}`],
     [`Total pagado: $${totalPagado.toLocaleString()} CLP`],
     ...metadata.nombres.map((n: any) => [
-      `Nombre: ${n.nombre} | Apellido: ${n.apellido} | Género: ${n.genero} | Tipo: ${n.tipoEntrada}`,
+      `Nombre: ${n.nombre} | Apellido: ${n.apellido} | Género: ${n.genero} | Tipo: ${n.tipoEntrada || n.tipo_entrada}`,
     ]),
   ];
 

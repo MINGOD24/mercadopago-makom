@@ -11,7 +11,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-screen flex flex-col">
         <header className="shadow bg-white w-full">
           <img
-            src="https://ecopass-static-temporal.s3.amazonaws.com/10269241-416c-476d-8648-bf827d0f4534"
+            src="https://ecopass-static-temporal.s3.amazonaws.com/6fa2dcb8-ca3e-48e3-9ac1-c547bd32c2f4"
             alt="Makom Yamim Noraim 2025"
             className="block w-full h-auto object-cover"
           />
