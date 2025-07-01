@@ -46,8 +46,7 @@ export default function Home() {
     precios.ninos * form.ninos +
     precios.donacion * form.donacion;
 
-  const totalEntradas =
-    form.general + form.ninos + form.bebes + form.gratuito;
+  const totalEntradas = form.general + form.ninos + form.bebes + form.gratuito;
 
   useEffect(() => {
     const tipos = [
@@ -70,31 +69,31 @@ export default function Home() {
 
   const handleSubmit = async () => {
     setError('');
-  
+
     if (totalEntradas === 0 && form.donacion === 0) {
       setError('Debes seleccionar al menos una entrada o una donación.');
       return;
     }
-  
+
     if (!form.contacto || !form.email.trim() || !form.rut.trim()) {
       setError('El teléfono, correo y RUT son obligatorios.');
       return;
     }
-  
+
     const tipos = [
       ...Array(form.general).fill('General'),
       ...Array(form.ninos).fill('Niños'),
       ...Array(form.bebes).fill('Bebé'),
       ...Array(form.gratuito).fill('Gratuito'),
     ];
-  
+
     const nombresFinal = tipos.map((tipo, i) => ({
       nombre: form.nombres[i]?.nombre || '',
       apellido: form.nombres[i]?.apellido || '',
       genero: form.nombres[i]?.genero || '',
       tipoEntrada: tipo,
     }));
-  
+
     if (
       nombresFinal.some(
         (n) => !n.nombre.trim() || !n.apellido.trim() || !n.genero.trim()
@@ -103,16 +102,16 @@ export default function Home() {
       setError('Todos los nombres, apellidos y géneros son obligatorios.');
       return;
     }
-  
+
     setLoading(true);
-  
+
     const payload = {
       ...form,
       nombres: nombresFinal,
     };
-  
+
     sessionStorage.setItem('ticketInfo', JSON.stringify(payload));
-  
+
     if (totalPago === 0) {
       await fetch('/api/mp-webhook', {
         method: 'POST',
@@ -130,7 +129,7 @@ export default function Home() {
       const { init_point } = await res.json();
       if (init_point) window.location.href = init_point;
     }
-  
+
     setLoading(false);
   };
   

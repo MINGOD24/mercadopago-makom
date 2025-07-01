@@ -11,50 +11,41 @@ export async function POST(req: NextRequest) {
     const data = await req.json();
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL!;
-    console.log('USANDO BASE_URL:', baseUrl);
-
     if (!baseUrl) throw new Error('NEXT_PUBLIC_BASE_URL no está definido');
 
-    const items: {
-      id: string;
-      title: string;
-      unit_price: number;
-      quantity: number;
-      currency_id: string;
-    }[] = [];
-
-    if (data.general > 0)
+    const items = [];
+    if (data.general > 0) {
       items.push({
         id: 'general',
         title: 'Entrada General',
         unit_price: 36000,
-        quantity: +data.general,
+        quantity: data.general,
         currency_id: 'CLP',
       });
+    }
 
-    if (data.ninos > 0)
+    if (data.ninos > 0) {
       items.push({
         id: 'ninos',
         title: 'Entrada Niños (4-11)',
-        unit_price: 18000,
-        quantity: +data.ninos,
+        unit_price: 1000,
+        quantity: data.ninos,
         currency_id: 'CLP',
       });
+    }
 
-    if (data.donacion > 0)
+    if (data.donacion > 0) {
       items.push({
         id: 'donacion',
         title: 'Donación Entrada',
         unit_price: 36000,
-        quantity: +data.donacion,
+        quantity: data.donacion,
         currency_id: 'CLP',
       });
+    }
 
     if (items.length === 0) {
-      return NextResponse.json(
-        { message: 'No se enviaron items válidos.' },
-        { status: 400 }
-      );
+      return NextResponse.json({ message: 'No se enviaron items válidos.' }, { status: 400 });
     }
 
     const preferenceBody = {
@@ -70,13 +61,11 @@ export async function POST(req: NextRequest) {
         email: data.email,
         rut: data.rut,
         donacion: data.donacion,
-        nombres: data.nombres,
+        nombres: data.nombres,  // Ahora seguro con tipoEntrada correcto
       },
       notification_url: `${baseUrl}/api/mp-webhook`,
       external_reference: data.email,
     };
-
-    console.log('💡 Enviando preferencia a Mercado Pago:', JSON.stringify(preferenceBody, null, 2));
 
     const { init_point } = await preferenceClient.create({ body: preferenceBody });
 
@@ -85,7 +74,7 @@ export async function POST(req: NextRequest) {
     console.error('Mercado Pago error:', err);
     return NextResponse.json(
       { message: err.message ?? 'Error inesperado' },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
