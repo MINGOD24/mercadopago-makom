@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
       items.push({
         id: 'ninos',
         title: 'Entrada Niños (4-11)',
-        unit_price: 1000,
+        unit_price: 18000,
         quantity: data.ninos,
         currency_id: 'CLP',
       });
@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
         email: data.email,
         rut: data.rut,
         donacion: data.donacion,
-        nombres: data.nombres,  // Ahora seguro con tipoEntrada correcto
+        nombres: data.nombres,
       },
       notification_url: `${baseUrl}/api/mp-webhook`,
       external_reference: data.email,
