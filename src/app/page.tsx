@@ -189,7 +189,7 @@ export default function Home() {
             onChange={(v) => setForm({ ...form, general: v })}
           />
           <TicketSelector
-            label={`Entrada Niños ($${precios.ninos.toLocaleString()})`}
+            label={`Entrada Niños - Sin asiento - ($${precios.ninos.toLocaleString()})`}
             value={form.ninos}
             onChange={(v) => setForm({ ...form, ninos: v })}
             info={infoEntradas.ninos}
