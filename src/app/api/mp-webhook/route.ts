@@ -66,7 +66,7 @@ async function guardarEnGoogleSheets(metadata: any, totalPagado: number) {
 
   await sheets.spreadsheets.values.append({
     spreadsheetId,
-    range: 'Hoja2!A1',
+    range: 'Hoja1!A1',
     valueInputOption: 'USER_ENTERED',
     requestBody: { values },
   });
