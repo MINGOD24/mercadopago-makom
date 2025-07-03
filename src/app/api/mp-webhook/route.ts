@@ -52,21 +52,6 @@ async function guardarEnGoogleSheets(metadata: any, totalPagado: number) {
   const sheets = google.sheets({ version: 'v4', auth });
   const spreadsheetId = process.env.GOOGLE_SHEET_ID!;
 
-  const getCols = await sheets.spreadsheets.values.get({
-    spreadsheetId,
-    range: 'A:Z',
-  });
-
-  const cols = getCols.data.values || [];
-  let colIndex = 0;
-  while (colIndex < 26) {
-    const col = cols.map(row => row[colIndex] || '');
-    if (col.every(cell => cell === '')) break;
-    colIndex++;
-  }
-
-  const colLetter = String.fromCharCode(65 + colIndex);
-
   const values = [
     [`Correo: ${metadata.email}`],
     [`Teléfono: ${metadata.contacto}`],
@@ -76,14 +61,15 @@ async function guardarEnGoogleSheets(metadata: any, totalPagado: number) {
     ...metadata.nombres.map((n: any) => [
       `Nombre: ${n.nombre} | Apellido: ${n.apellido} | Género: ${n.genero} | Tipo: ${n.tipoEntrada || n.tipo_entrada}`,
     ]),
+    ['-------------------------'], // Línea separadora opcional
   ];
 
-  await sheets.spreadsheets.values.update({
+  await sheets.spreadsheets.values.append({
     spreadsheetId,
-    range: `${colLetter}1`,
+    range: 'Hoja2!A1',
     valueInputOption: 'USER_ENTERED',
     requestBody: { values },
   });
 
-  console.log('✅ Datos guardados en Google Sheets');
+  console.log('✅ Datos guardados en Hoja2 de Google Sheets');
 }
