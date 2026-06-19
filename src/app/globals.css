@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #fffaf2;
+  --foreground: #27211b;
 }
 
 @theme inline {
@@ -12,15 +12,34 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.PhoneInput {
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.PhoneInputCountry {
+  margin-right: 0;
+}
+
+.PhoneInputInput {
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: #27211b;
+  font: inherit;
+  outline: none;
+}
+
+.PhoneInputInput::placeholder {
+  color: #9b8f80;
 }

@@ -1,40 +1,33 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useId, useState } from 'react';
 import { Info } from 'lucide-react';
 
 export function InfoTooltip({ info }: { info: string }) {
   const [show, setShow] = useState(false);
-  const [isTouch, setIsTouch] = useState(false);
-
-  useEffect(() => {
-    const touch = window.matchMedia('(pointer: coarse)').matches;
-    setIsTouch(touch);
-  }, []);
+  const tooltipId = useId();
 
   return (
-    <div className="relative inline-block">
-      {isTouch ? (
-        <button
-          type="button"
-          onClick={() => setShow(!show)}
-          className="focus:outline-none"
-        >
-          <Info className="w-4 h-4 text-gray-400" />
-        </button>
-      ) : (
-        <div className="group relative">
-          <Info className="w-4 h-4 text-gray-400" />
-          <div className="absolute z-10 bottom-full mb-1 hidden group-hover:block bg-gray-700 text-white text-xs rounded p-1 max-w-xs">
-            {info}
-          </div>
-        </div>
-      )}
-
-      {isTouch && show && (
-        <div className="absolute z-10 bottom-full mb-1 bg-gray-700 text-white text-xs rounded p-1 max-w-xs">
-          {info}
-        </div>
-      )}
-    </div>
+    <span className="group relative inline-flex">
+      <button
+        type="button"
+        aria-label="Más información"
+        aria-describedby={tooltipId}
+        aria-expanded={show}
+        onClick={() => setShow((current) => !current)}
+        onBlur={() => setShow(false)}
+        className="grid size-6 place-items-center rounded-full text-[#8a641d] transition hover:bg-[#f3e5c6] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#b98a35]"
+      >
+        <Info className="h-4 w-4" />
+      </button>
+      <span
+        id={tooltipId}
+        role="tooltip"
+        className={`absolute bottom-full left-1/2 z-20 mb-2 w-64 max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-lg bg-[#24385f] px-3 py-2 text-left text-xs font-medium leading-relaxed text-white shadow-lg ${
+          show ? 'block' : 'hidden group-hover:block group-focus-within:block'
+        }`}
+      >
+        {info}
+      </span>
+    </span>
   );
 }

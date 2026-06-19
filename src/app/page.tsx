@@ -1,15 +1,10 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Plus, Minus } from 'lucide-react';
 import { InfoTooltip } from '@/components/InfoTooltip';
+import { PRECIOS } from '@/lib/tickets';
 import 'react-phone-number-input/style.css';
 import PhoneInput from 'react-phone-number-input';
-
-const precios = {
-  general: 36000,
-  ninos: 18000,
-  donacion: 36000,
-};
 
 const infoEntradas = {
   ninos: 'Entre 4-11 años. Incluye entretención y comida. Sin asiento.',
@@ -17,8 +12,102 @@ const infoEntradas = {
   gratuito: 'Para personas sin posibilidad de pago.',
 };
 
+const formatPrice = (value: number) => `$${value.toLocaleString('es-CL')} CLP`;
 
+const cleanRut = (value: string) =>
+  value
+    .replace(/[^0-9kK]/g, '')
+    .toUpperCase()
+    .replace(/K(?!$)/g, '')
+    .slice(0, 9);
 
+const formatRut = (value: string) => {
+  const cleaned = cleanRut(value);
+  if (cleaned.length <= 1) return cleaned;
+
+  const body = cleaned.slice(0, -1);
+  const verifier = cleaned.slice(-1);
+  const formattedBody = body.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+  return `${formattedBody}-${verifier}`;
+};
+
+const fieldClass =
+  'w-full rounded-lg border border-[#d8c9b4] bg-white px-3 py-2.5 text-[#27211b] shadow-sm transition placeholder:text-[#9b8f80] focus:border-[#b98a35] focus:outline-none focus:ring-2 focus:ring-[#ead2a0] focus-within:border-[#b98a35] focus-within:ring-2 focus-within:ring-[#ead2a0]';
+
+const labelClass = 'mb-1.5 block text-sm font-semibold text-[#4b3d31]';
+
+type TicketSelectorProps = {
+  label: string;
+  detail?: string;
+  price: string;
+  value: number;
+  onChange: (val: number) => void;
+  info?: string;
+};
+
+function TicketSelector({
+  label,
+  detail,
+  price,
+  value,
+  onChange,
+  info,
+}: TicketSelectorProps) {
+  return (
+    <article
+      className={`grid gap-4 rounded-xl border px-4 py-4 transition sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center ${
+        value > 0
+          ? 'border-[#d5ad57] bg-[#fff8ea] shadow-sm'
+          : 'border-[#eadfce] bg-white/90'
+      }`}
+    >
+      <div className="min-w-0">
+        <div className="flex items-center gap-2">
+          <h3 className="text-base font-semibold text-[#24385f]">{label}</h3>
+          {info && <InfoTooltip info={info} />}
+        </div>
+        {detail && <p className="mt-1 text-sm text-[#6f6255]">{detail}</p>}
+        <p className="mt-2 text-sm font-semibold text-[#8a641d]">{price}</p>
+      </div>
+      <div className="flex h-11 items-center justify-between gap-2 rounded-full border border-[#e1d3bd] bg-[#fbf6ed] p-1 sm:justify-end">
+        <button
+          type="button"
+          onClick={(event) => {
+            onChange(Math.max(0, value - 1));
+            if (event.detail > 0) event.currentTarget.blur();
+          }}
+          disabled={value === 0}
+          aria-label={`Restar ${label}`}
+          className={`grid size-9 place-items-center rounded-full transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#b98a35] ${
+            value === 0
+              ? 'cursor-not-allowed text-[#b8aa99]'
+              : 'bg-white text-[#24385f] shadow-sm hover:bg-[#f0e4d1]'
+          }`}
+        >
+          <Minus className="w-4 h-4" />
+        </button>
+        <span
+          className="min-w-9 text-center text-base font-semibold tabular-nums text-[#24385f]"
+          aria-live="polite"
+        >
+          {value}
+        </span>
+        <button
+          type="button"
+          onClick={(event) => {
+            onChange(value + 1);
+            if (event.detail > 0) event.currentTarget.blur();
+          }}
+          aria-label={`Sumar ${label}`}
+          className="grid size-9 place-items-center rounded-full bg-[#24385f] text-white shadow-sm transition hover:bg-[#182948] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#b98a35]"
+        >
+          <Plus className="w-4 h-4" />
+        </button>
+      </div>
+    </article>
+  );
+}
 
 export default function Home() {
   const [form, setForm] = useState({
@@ -40,11 +129,12 @@ export default function Home() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const errorRef = useRef<HTMLDivElement>(null);
 
   const totalPago =
-    precios.general * form.general +
-    precios.ninos * form.ninos +
-    precios.donacion * form.donacion;
+    PRECIOS.general * form.general +
+    PRECIOS.ninos * form.ninos +
+    PRECIOS.donacion * form.donacion;
 
   const totalEntradas = form.general + form.ninos + form.bebes + form.gratuito;
 
@@ -67,6 +157,15 @@ export default function Home() {
     }));
   }, [form.general, form.ninos, form.bebes, form.gratuito]);
 
+  useEffect(() => {
+    if (!error) return;
+
+    requestAnimationFrame(() => {
+      errorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      errorRef.current?.focus({ preventScroll: true });
+    });
+  }, [error]);
+
   const handleSubmit = async () => {
     setError('');
 
@@ -75,8 +174,16 @@ export default function Home() {
       return;
     }
 
-    if (!form.contacto || !form.email.trim() || !form.rut.trim()) {
-      setError('El teléfono, correo y RUT son obligatorios.');
+    const camposContactoFaltantes = [
+      !form.contacto ? 'teléfono' : '',
+      !form.email.trim() ? 'correo' : '',
+      !form.rut.trim() ? 'RUT' : '',
+    ].filter(Boolean);
+
+    if (camposContactoFaltantes.length > 0) {
+      setError(
+        `Completá ${camposContactoFaltantes.join(', ')} para continuar.`
+      );
       return;
     }
 
@@ -99,7 +206,9 @@ export default function Home() {
         (n) => !n.nombre.trim() || !n.apellido.trim() || !n.genero.trim()
       )
     ) {
-      setError('Todos los nombres, apellidos y géneros son obligatorios.');
+      setError(
+        'Revisá los datos de asistentes: faltan nombre, apellido o género.'
+      );
       return;
     }
 
@@ -112,210 +221,307 @@ export default function Home() {
 
     sessionStorage.setItem('ticketInfo', JSON.stringify(payload));
 
-    if (totalPago === 0) {
-      await fetch('/api/mp-webhook', {
-        method: 'POST',
-        body: JSON.stringify({
-          type: 'manual_free',
-          metadata: payload,
-        }),
-      });
-      window.location.href = '/success';
-    } else {
-      const res = await fetch('/api/checkout', {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      });
-      const { init_point } = await res.json();
-      if (init_point) window.location.href = init_point;
+    try {
+      if (totalPago === 0) {
+        const res = await fetch('/api/mp-webhook', {
+          method: 'POST',
+          body: JSON.stringify({
+            type: 'manual_free',
+            metadata: payload,
+          }),
+        });
+
+        if (!res.ok) {
+          throw new Error('No pudimos confirmar la reserva gratuita.');
+        }
+
+        window.location.href = '/success';
+      } else {
+        const res = await fetch('/api/checkout', {
+          method: 'POST',
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+
+        if (!res.ok || !data.init_point) {
+          throw new Error(
+            data.message || 'No pudimos iniciar el pago. Intentá nuevamente.'
+          );
+        }
+
+        window.location.href = data.init_point;
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Ocurrió un error inesperado. Intentá nuevamente.'
+      );
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
-  
-  
 
-  const TicketSelector = ({
-    label,
-    value,
-    onChange,
-    info,
-  }: {
-    label: string;
-    value: number;
-    onChange: (val: number) => void;
-    info?: string;
-  }) => (
-    <div className="flex items-center justify-between">
-      <div className="flex items-center gap-1">
-        <span className="font-medium text-gray-700">{label}</span>
-        {info && <InfoTooltip info={info} />}
-      </div>
-      <div className="flex items-center gap-2">
-        <button
-          onClick={() => onChange(Math.max(0, value - 1))}
-          className="bg-gray-200 rounded-full p-1 hover:bg-gray-300"
-        >
-          <Minus className="w-4 h-4" />
-        </button>
-        <span className="w-8 text-center">{value}</span>
-        <button
-          onClick={() => onChange(value + 1)}
-          className="bg-gray-200 rounded-full p-1 hover:bg-gray-300"
-        >
-          <Plus className="w-4 h-4" />
-        </button>
-      </div>
-    </div>
-  );
+  const updateTicketQuantity = (
+    key: 'general' | 'ninos' | 'donacion' | 'bebes' | 'gratuito',
+    value: number
+  ) => {
+    const scrollPosition =
+      typeof window === 'undefined'
+        ? null
+        : { left: window.scrollX, top: window.scrollY };
+
+    setForm((current) => ({ ...current, [key]: value }));
+
+    if (scrollPosition) {
+      requestAnimationFrame(() => {
+        window.scrollTo(scrollPosition.left, scrollPosition.top);
+        requestAnimationFrame(() => {
+          window.scrollTo(scrollPosition.left, scrollPosition.top);
+        });
+      });
+    }
+  };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-green-100 via-blue-100 to-indigo-100 flex flex-col items-center">
-      <section className="w-full max-w-xl min-w-[280px] bg-white p-4 sm:p-8 mt-6 rounded-2xl shadow-lg">
-        <h2 className="text-2xl font-semibold text-[#1f3b82] mb-6 text-center">
-          Reserva tus entradas
-        </h2>
-
-        {error && (
-          <div className="bg-red-100 text-red-700 p-2 mb-4 rounded">
-            {error}
-          </div>
-        )}
-
-        <div className="grid gap-4 text-sm">
-          <TicketSelector
-            label={`Entrada General ($${precios.general.toLocaleString()})`}
-            value={form.general}
-            onChange={(v) => setForm({ ...form, general: v })}
-          />
-          <TicketSelector
-            label={`Entrada Niños - Sin asiento - ($${precios.ninos.toLocaleString()})`}
-            value={form.ninos}
-            onChange={(v) => setForm({ ...form, ninos: v })}
-            info={infoEntradas.ninos}
-          />
-          <TicketSelector
-            label={`Donar entrada ($${precios.donacion.toLocaleString()})`}
-            value={form.donacion}
-            onChange={(v) => setForm({ ...form, donacion: v })}
-          />
-          <TicketSelector
-            label="Entrada Bebés ($0)"
-            value={form.bebes}
-            onChange={(v) => setForm({ ...form, bebes: v })}
-            info={infoEntradas.bebes}
-          />
-          <TicketSelector
-            label="No puedo pagar ($0)"
-            value={form.gratuito}
-            onChange={(v) => setForm({ ...form, gratuito: v })}
-            info={infoEntradas.gratuito}
-          />
-
-          <div className="flex flex-col">
-            <label className="text-sm font-medium text-gray-700 mb-1">Teléfono</label>
-            <PhoneInput
-              international
-              defaultCountry="CL"
-              value={form.contacto}
-              onChange={(val) => setForm({ ...form, contacto: val || '' })}
-              className="w-full p-2 border border-gray-300 rounded"
-            />
-          </div>
-
-          <div className="flex flex-col">
-            <label className="text-sm font-medium text-gray-700 mb-1">Correo</label>
-            <input
-              type="email"
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-              className="w-full p-2 border border-gray-300 rounded"
-            />
-          </div>
-
-          <div className="flex flex-col">
-            <label className="text-sm font-medium text-gray-700 mb-1">RUT</label>
-            <input
-              type="text"
-              value={form.rut}
-              onChange={(e) => setForm({ ...form, rut: e.target.value })}
-              className="w-full p-2 border border-gray-300 rounded"
-            />
-          </div>
+    <div className="w-full py-6 sm:py-10">
+      <section className="mx-auto w-full max-w-2xl min-w-[280px] overflow-hidden rounded-2xl border border-[#e7d9c5] bg-[#fffaf2] shadow-[0_24px_70px_rgba(47,34,20,0.14)]">
+        <div className="border-b border-[#eadfce] bg-gradient-to-r from-[#fffaf2] via-[#f8eddb] to-[#fffaf2] px-5 py-6 text-center sm:px-8">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#9a6f23]">
+            Tickets para Yamim Noraim
+          </p>
+          <h1 className="mt-2 text-2xl font-semibold text-[#24385f] sm:text-3xl">
+            Reservá tus lugares para Rosh Hashaná y Yom Kipur
+          </h1>
         </div>
 
-        {form.nombres.length > 0 && (
-          <div className="mt-6">
-            <h3 className="text-lg font-semibold text-[#1f3b82] mb-2">Datos de asistentes</h3>
-            <div className="flex flex-col gap-4">
-              {form.nombres.map((n, i) => (
-                <div key={i} className="flex flex-col gap-1">
-                  <span className="text-sm text-gray-500 font-medium">Tipo de entrada: {n.tipoEntrada}</span>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <input
-                      className="w-full p-2 border rounded"
-                      placeholder="Nombre"
-                      value={n.nombre}
-                      onChange={(e) =>
-                        setForm((p) => {
-                          const upd = [...p.nombres];
-                          upd[i].nombre = e.target.value;
-                          return { ...p, nombres: upd };
-                        })
-                      }
-                    />
-                    <input
-                      className="w-full p-2 border rounded"
-                      placeholder="Apellido"
-                      value={n.apellido}
-                      onChange={(e) =>
-                        setForm((p) => {
-                          const upd = [...p.nombres];
-                          upd[i].apellido = e.target.value;
-                          return { ...p, nombres: upd };
-                        })
-                      }
-                    />
-                    <select
-                      className="w-full p-2 border rounded"
-                      value={n.genero}
-                      onChange={(e) =>
-                        setForm((p) => {
-                          const upd = [...p.nombres];
-                          upd[i].genero = e.target.value;
-                          return { ...p, nombres: upd };
-                        })
-                      }
-                    >
-                      <option value="">Género</option>
-                      <option value="Masculino">Masculino</option>
-                      <option value="Femenino">Femenino</option>
-                    </select>
-                  </div>
-                </div>
-              ))}
+        <div className="p-5 sm:p-8">
+          <div
+            className="grid gap-3 text-sm"
+            aria-label="Seleccioná la cantidad de tickets"
+          >
+            <TicketSelector
+              label="Entrada general"
+              detail="Asiento para Altas Fiestas"
+              price={formatPrice(PRECIOS.general)}
+              value={form.general}
+              onChange={(v) => updateTicketQuantity('general', v)}
+            />
+            <TicketSelector
+              label="Entrada niños"
+              detail="Entre 4-11 años, sin asiento"
+              price={formatPrice(PRECIOS.ninos)}
+              value={form.ninos}
+              onChange={(v) => updateTicketQuantity('ninos', v)}
+              info={infoEntradas.ninos}
+            />
+            <TicketSelector
+              label="Donar entrada"
+              detail="Acompañá a otra persona de la comunidad"
+              price={formatPrice(PRECIOS.donacion)}
+              value={form.donacion}
+              onChange={(v) => updateTicketQuantity('donacion', v)}
+            />
+            <TicketSelector
+              label="Entrada bebés"
+              detail="Entre 0-3 años, sin asiento"
+              price={formatPrice(0)}
+              value={form.bebes}
+              onChange={(v) => updateTicketQuantity('bebes', v)}
+              info={infoEntradas.bebes}
+            />
+            <TicketSelector
+              label="No puedo pagar"
+              detail="Para personas sin posibilidad de pago"
+              price={formatPrice(0)}
+              value={form.gratuito}
+              onChange={(v) => updateTicketQuantity('gratuito', v)}
+              info={infoEntradas.gratuito}
+            />
+          </div>
+
+          <div className="mt-7 grid gap-4 border-t border-[#eadfce] pt-6">
+            <div>
+              <label htmlFor="contacto" className={labelClass}>
+                Teléfono
+              </label>
+              <PhoneInput
+                id="contacto"
+                international
+                defaultCountry="CL"
+                value={form.contacto}
+                onChange={(val) => setForm({ ...form, contacto: val || '' })}
+                className={fieldClass}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="email" className={labelClass}>
+                Correo
+              </label>
+              <input
+                id="email"
+                type="email"
+                autoComplete="email"
+                placeholder="nombre@correo.com"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                className={fieldClass}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="rut" className={labelClass}>
+                RUT
+              </label>
+              <input
+                id="rut"
+                type="text"
+                autoComplete="off"
+                inputMode="text"
+                placeholder="12.345.678-9"
+                value={form.rut}
+                onChange={(e) =>
+                  setForm({ ...form, rut: formatRut(e.target.value) })
+                }
+                className={fieldClass}
+              />
             </div>
           </div>
-        )}
 
-        <div className="mt-6 text-center">
-          <div className="inline-block bg-yellow-300 text-yellow-900 font-bold text-lg px-4 py-2 rounded shadow">
-            Total a pagar: ${totalPago.toLocaleString()} CLP
+          {form.nombres.length > 0 && (
+            <div className="mt-7 border-t border-[#eadfce] pt-6">
+              <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+                <h2 className="text-lg font-semibold text-[#24385f]">
+                  Datos de asistentes
+                </h2>
+                <span className="text-sm font-medium text-[#7a6c5c]">
+                  {form.nombres.length}{' '}
+                  {form.nombres.length === 1 ? 'entrada' : 'entradas'}
+                </span>
+              </div>
+              <div className="grid gap-4">
+                {form.nombres.map((n, i) => (
+                  <fieldset
+                    key={i}
+                    className="rounded-xl border border-[#eadfce] bg-white/90 px-4 pb-4 pt-3 shadow-sm"
+                  >
+                    <legend className="px-2 text-sm font-semibold text-[#6b2737]">
+                      Asistente {i + 1}
+                    </legend>
+                    <p className="mb-3 text-sm font-medium text-[#7a6c5c]">
+                      Tipo de entrada: {n.tipoEntrada}
+                    </p>
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                      <div>
+                        <label htmlFor={`nombre-${i}`} className={labelClass}>
+                          Nombre
+                        </label>
+                        <input
+                          id={`nombre-${i}`}
+                          className={fieldClass}
+                          value={n.nombre}
+                          onChange={(e) =>
+                            setForm((p) => {
+                              const upd = [...p.nombres];
+                              upd[i].nombre = e.target.value;
+                              return { ...p, nombres: upd };
+                            })
+                          }
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor={`apellido-${i}`} className={labelClass}>
+                          Apellido
+                        </label>
+                        <input
+                          id={`apellido-${i}`}
+                          className={fieldClass}
+                          value={n.apellido}
+                          onChange={(e) =>
+                            setForm((p) => {
+                              const upd = [...p.nombres];
+                              upd[i].apellido = e.target.value;
+                              return { ...p, nombres: upd };
+                            })
+                          }
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor={`genero-${i}`} className={labelClass}>
+                          Género
+                        </label>
+                        <select
+                          id={`genero-${i}`}
+                          className={fieldClass}
+                          value={n.genero}
+                          onChange={(e) =>
+                            setForm((p) => {
+                              const upd = [...p.nombres];
+                              upd[i].genero = e.target.value;
+                              return { ...p, nombres: upd };
+                            })
+                          }
+                        >
+                          <option value="">Seleccionar</option>
+                          <option value="Masculino">Masculino</option>
+                          <option value="Femenino">Femenino</option>
+                        </select>
+                      </div>
+                    </div>
+                  </fieldset>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="mt-7 rounded-xl border border-[#24385f] bg-[#24385f] p-4 text-white shadow-[0_12px_30px_rgba(36,56,95,0.18)]">
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+              <span className="text-sm font-semibold text-[#f2d99f]">
+                Total a pagar
+              </span>
+              <strong className="text-2xl font-semibold tabular-nums">
+                {formatPrice(totalPago)}
+              </strong>
+            </div>
+            <p className="mt-2 text-sm text-[#f6ead4]">
+              {totalPago > 0
+                ? 'Tu reserva será confirmada después del pago.'
+                : 'Tu reserva será confirmada al finalizar.'}
+            </p>
           </div>
-        </div>
 
-        <button
-          onClick={handleSubmit}
-          disabled={loading}
-          className={`mt-8 w-full py-3 rounded-lg font-semibold transition-colors ${
-            loading
-              ? 'bg-gray-400 cursor-not-allowed'
-              : 'bg-[#1f3b82] text-white hover:bg-[#3355aa]'
-          }`}
-        >
-          {loading ? 'Procesando...' : 'Confirmar reserva'}
-        </button>
+          {error && (
+            <div
+              id="form-error"
+              ref={errorRef}
+              role="alert"
+              tabIndex={-1}
+              className="mt-5 rounded-lg border border-[#f0b4a9] bg-[#fff1ee] px-4 py-3 text-sm font-medium text-[#9a2f22] shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#d46b58]"
+            >
+              {error}
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={loading}
+            aria-describedby={error ? 'form-error' : undefined}
+            className={`mt-5 w-full rounded-xl px-5 py-3.5 text-base font-semibold shadow-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#b98a35] focus-visible:ring-offset-2 focus-visible:ring-offset-[#fffaf2] ${
+              loading
+                ? 'cursor-not-allowed bg-[#b9ad9d] text-white'
+                : 'bg-[#6b2737] text-white hover:bg-[#571d2b]'
+            }`}
+          >
+            {loading
+              ? 'Procesando...'
+              : totalPago > 0
+              ? 'Continuar al pago'
+              : 'Reservar tickets'}
+          </button>
+        </div>
       </section>
-    </main>
+    </div>
   );
 }
