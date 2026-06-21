@@ -397,7 +397,7 @@ export default function Home() {
             />
             <TicketSelector
               label="Entrada Niños (4 a 11 años)"
-              detail="Programa infantil con actividades, juegos y colación. Sin asiento asignado."
+              detail="Programa infantil con actividades, juegos y colación. Sin asiento."
               price={formatPrice(PRECIOS.ninos)}
               value={form.ninos}
               onChange={(v) => updateTicketQuantity('ninos', v)}
@@ -411,51 +411,51 @@ export default function Home() {
             /> */}
             <TicketSelector
               label="Entrada Bebés (0 a 3 años)"
-              detail="Programa infantil con actividades, juegos y colación. Sin asiento asignado."
+              detail="Programa infantil con actividades, juegos y colación. Sin asiento."
               price={formatPrice(0)}
               value={form.bebes}
               onChange={(v) => updateTicketQuantity('bebes', v)}
             />
 
             <section
-              className="rounded-xl border border-[#eadfce] bg-white/90 px-4 py-4"
+              className="rounded-xl border border-[#ead8b2] bg-[#fff7e8] px-4 py-4 shadow-sm"
               aria-labelledby="seleccionar-monto"
             >
               <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <h2
                     id="seleccionar-monto"
-                    className="text-base font-semibold text-[#24385f]"
+                    className="text-base font-semibold text-[#6b2737]"
                   >
                     ¿Necesitas ayuda con el valor de tus entradas?
                   </h2>
-                  <p className="mt-1 text-sm text-[#6f6255]">
-                    Seleciona la cantidad de entradas y el monto que puedes pagar.
+                  <p className="mt-1 text-sm text-[#5c4b3b]">
+                    Selecciona la cantidad de entradas y el monto que puedes pagar.
                   </p>
                 </div>
-                <strong className="text-lg font-semibold tabular-nums text-[#8a641d]">
+                <strong className="text-lg font-semibold tabular-nums text-[#6b2737]">
                   {formatPrice(
                     totalMontoEntradas > 0 ? form.aporteGratuito : 0
                   )}
                 </strong>
               </div>
 
-              <div className="mt-4 rounded-lg border border-[#eadfce] bg-[#fbf6ed] px-3 py-3">
+              <div className="mt-4 rounded-lg border border-[#eadfce] bg-white/80 px-3 py-3">
                 <AmountTicketRow
-                  label="General"
-                  detail="Adultos"
+                  label="Entrada General"
+                  detail=""
                   value={form.montoGeneral}
                   onChange={(v) => updateTicketQuantity('montoGeneral', v)}
                 />
                 <AmountTicketRow
-                  label="Niños"
-                  detail="4 a 11 años"
+                  label="Entrada Niños (4 a 11 años)"
+                  detail="Programa infantil con actividades, juegos y colación. Sin asiento."
                   value={form.montoNinos}
                   onChange={(v) => updateTicketQuantity('montoNinos', v)}
                 />
                 <AmountTicketRow
-                  label="Bebés"
-                  detail="0 a 3 años"
+                  label="Entrada Bebés (0 a 3 años)"
+                  detail="Programa infantil con actividades, juegos y colación. Sin asiento."
                   value={form.montoBebes}
                   onChange={(v) => updateTicketQuantity('montoBebes', v)}
                 />
