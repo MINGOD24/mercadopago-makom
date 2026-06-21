@@ -53,14 +53,25 @@ async function guardarEnGoogleSheets(metadata: any, totalPagado: number) {
   const spreadsheetId = process.env.GOOGLE_SHEET_ID!;
   const aporteGratuito =
     metadata.aporteGratuito ?? metadata.aporte_gratuito ?? 0;
+  const entradasGeneral = metadata.general ?? 0;
+  const entradasNinos = metadata.ninos ?? 0;
+  const entradasBebes = metadata.bebes ?? 0;
+  const montoGeneral = metadata.montoGeneral ?? metadata.monto_general ?? 0;
+  const montoNinos = metadata.montoNinos ?? metadata.monto_ninos ?? 0;
+  const montoBebes = metadata.montoBebes ?? metadata.monto_bebes ?? 0;
 
   const values = [
     [`Correo: ${metadata.email}`],
     [`Teléfono: ${metadata.contacto}`],
     [`RUT: ${metadata.rut || ''}`],
+    [`Entradas general: ${entradasGeneral}`],
+    [`Entradas niños: ${entradasNinos}`],
+    [`Entradas bebés: ${entradasBebes}`],
+    [`Seleccionar monto - general: ${montoGeneral}`],
+    [`Seleccionar monto - niños: ${montoNinos}`],
+    [`Seleccionar monto - bebés: ${montoBebes}`],
     [`Cantidad de donaciones: ${metadata.donacion || 0}`],
-    [`Cantidad de entradas con aporte voluntario: ${metadata.gratuito || 0}`],
-    [`Aporte voluntario: $${Number(aporteGratuito).toLocaleString()} CLP`],
+    [`Monto seleccionado: $${Number(aporteGratuito).toLocaleString()} CLP`],
     [`Total pagado: $${totalPagado.toLocaleString()} CLP`],
     ...metadata.nombres.map((n: any) => [
       `Nombre: ${n.nombre} | Apellido: ${n.apellido} | Género: ${n.genero} | Tipo: ${n.tipoEntrada || n.tipo_entrada}`,

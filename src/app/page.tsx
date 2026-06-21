@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useRef, type ReactNode } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Plus, Minus } from 'lucide-react';
 import { PRECIOS } from '@/lib/tickets';
 import 'react-phone-number-input/style.css';
@@ -36,7 +36,6 @@ type TicketSelectorProps = {
   price: string;
   value: number;
   onChange: (val: number) => void;
-  children?: ReactNode;
 };
 
 function TicketSelector({
@@ -45,7 +44,6 @@ function TicketSelector({
   price,
   value,
   onChange,
-  children,
 }: TicketSelectorProps) {
   return (
     <article
@@ -97,8 +95,65 @@ function TicketSelector({
           <Plus className="w-4 h-4" />
         </button>
       </div>
-      {children && <div className="sm:col-span-2">{children}</div>}
     </article>
+  );
+}
+
+type AmountTicketRowProps = {
+  label: string;
+  detail: string;
+  value: number;
+  onChange: (val: number) => void;
+};
+
+function AmountTicketRow({
+  label,
+  detail,
+  value,
+  onChange,
+}: AmountTicketRowProps) {
+  return (
+    <div className="flex items-center justify-between gap-3 border-t border-[#eadfce] py-3 first:border-t-0 first:pt-0 last:pb-0">
+      <div className="min-w-0">
+        <h3 className="text-sm font-semibold text-[#24385f]">{label}</h3>
+        <p className="mt-0.5 text-xs text-[#6f6255]">{detail}</p>
+      </div>
+      <div className="flex h-10 shrink-0 items-center justify-between gap-2 rounded-full border border-[#e1d3bd] bg-[#fbf6ed] p-1">
+        <button
+          type="button"
+          onClick={(event) => {
+            onChange(Math.max(0, value - 1));
+            if (event.detail > 0) event.currentTarget.blur();
+          }}
+          disabled={value === 0}
+          aria-label={`Restar ${label}`}
+          className={`grid size-8 place-items-center rounded-full transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#b98a35] ${
+            value === 0
+              ? 'cursor-not-allowed text-[#b8aa99]'
+              : 'bg-white text-[#24385f] shadow-sm hover:bg-[#f0e4d1]'
+          }`}
+        >
+          <Minus className="size-4" />
+        </button>
+        <span
+          className="min-w-8 text-center text-sm font-semibold tabular-nums text-[#24385f]"
+          aria-live="polite"
+        >
+          {value}
+        </span>
+        <button
+          type="button"
+          onClick={(event) => {
+            onChange(value + 1);
+            if (event.detail > 0) event.currentTarget.blur();
+          }}
+          aria-label={`Sumar ${label}`}
+          className="grid size-8 place-items-center rounded-full bg-[#24385f] text-white shadow-sm transition hover:bg-[#182948] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#b98a35]"
+        >
+          <Plus className="size-4" />
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -108,7 +163,9 @@ export default function Home() {
     ninos: 0,
     donacion: 0,
     bebes: 0,
-    gratuito: 0,
+    montoGeneral: 0,
+    montoNinos: 0,
+    montoBebes: 0,
     aporteGratuito: 0,
     contacto: '',
     email: '',
@@ -126,20 +183,29 @@ export default function Home() {
   const [aporteGratuitoInput, setAporteGratuitoInput] = useState('0');
   const errorRef = useRef<HTMLDivElement>(null);
 
+  const totalMontoEntradas =
+    form.montoGeneral + form.montoNinos + form.montoBebes;
+
   const totalPago =
     PRECIOS.general * form.general +
     PRECIOS.ninos * form.ninos +
     PRECIOS.donacion * form.donacion +
-    (form.gratuito > 0 ? form.aporteGratuito : 0);
+    (totalMontoEntradas > 0 ? form.aporteGratuito : 0);
 
-  const totalEntradas = form.general + form.ninos + form.bebes + form.gratuito;
+  const totalEntradas =
+    form.general +
+    form.ninos +
+    form.bebes +
+    totalMontoEntradas;
 
   useEffect(() => {
     const tipos = [
       ...Array(form.general).fill('General'),
       ...Array(form.ninos).fill('Niños'),
       ...Array(form.bebes).fill('Bebé'),
-      ...Array(form.gratuito).fill('Gratuito'),
+      ...Array(form.montoGeneral).fill('General - monto seleccionado'),
+      ...Array(form.montoNinos).fill('Niños - monto seleccionado'),
+      ...Array(form.montoBebes).fill('Bebé - monto seleccionado'),
     ];
 
     setForm((prev) => ({
@@ -151,7 +217,14 @@ export default function Home() {
         tipoEntrada: tipo,
       })),
     }));
-  }, [form.general, form.ninos, form.bebes, form.gratuito]);
+  }, [
+    form.general,
+    form.ninos,
+    form.bebes,
+    form.montoGeneral,
+    form.montoNinos,
+    form.montoBebes,
+  ]);
 
   useEffect(() => {
     if (!error) return;
@@ -187,7 +260,9 @@ export default function Home() {
       ...Array(form.general).fill('General'),
       ...Array(form.ninos).fill('Niños'),
       ...Array(form.bebes).fill('Bebé'),
-      ...Array(form.gratuito).fill('Gratuito'),
+      ...Array(form.montoGeneral).fill('General - monto seleccionado'),
+      ...Array(form.montoNinos).fill('Niños - monto seleccionado'),
+      ...Array(form.montoBebes).fill('Bebé - monto seleccionado'),
     ];
 
     const nombresFinal = tipos.map((tipo, i) => ({
@@ -212,7 +287,7 @@ export default function Home() {
 
     const payload = {
       ...form,
-      aporteGratuito: form.gratuito > 0 ? form.aporteGratuito : 0,
+      aporteGratuito: totalMontoEntradas > 0 ? form.aporteGratuito : 0,
       nombres: nombresFinal,
     };
 
@@ -260,7 +335,14 @@ export default function Home() {
   };
 
   const updateTicketQuantity = (
-    key: 'general' | 'ninos' | 'donacion' | 'bebes' | 'gratuito',
+    key:
+      | 'general'
+      | 'ninos'
+      | 'donacion'
+      | 'bebes'
+      | 'montoGeneral'
+      | 'montoNinos'
+      | 'montoBebes',
     value: number
   ) => {
     const scrollPosition =
@@ -314,51 +396,6 @@ export default function Home() {
               onChange={(v) => updateTicketQuantity('general', v)}
             />
             <TicketSelector
-              label="Entrada General con aporte voluntario"
-              detail="Si hoy no te es posible pagar el valor completo, selecciona esta opción."
-              price={
-                form.gratuito > 0 && form.aporteGratuito > 0
-                  ? `Aporte total: ${formatPrice(form.aporteGratuito)}`
-                  : 'Monto a elección'
-              }
-              value={form.gratuito}
-              onChange={(v) => updateTicketQuantity('gratuito', v)}
-            >
-              {form.gratuito > 0 && (
-                <div className="rounded-lg border border-[#eadfce] bg-white/80 p-3">
-                  <label htmlFor="aporteGratuito" className={labelClass}>
-                    Monto total a pagar por estas entradas
-                  </label>
-                  <div className="relative">
-                    <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-[#7a6c5c]">
-                      $
-                    </span>
-                    <input
-                      id="aporteGratuito"
-                      type="text"
-                      inputMode="numeric"
-                      pattern="[0-9]*"
-                      value={aporteGratuitoInput}
-                      onFocus={(event) => {
-                        if (aporteGratuitoInput === '0') {
-                          event.currentTarget.select();
-                        }
-                      }}
-                      onChange={(event) =>
-                        updateAporteGratuito(event.target.value)
-                      }
-                      onBlur={() => {
-                        if (aporteGratuitoInput === '') {
-                          setAporteGratuitoInput('0');
-                        }
-                      }}
-                      className={`${fieldClass} pl-7`}
-                    />
-                  </div>
-                </div>
-              )}
-            </TicketSelector>
-            <TicketSelector
               label="Entrada Niños (4 a 11 años)"
               detail="Programa infantil con actividades, juegos y colación. Sin asiento asignado."
               price={formatPrice(PRECIOS.ninos)}
@@ -379,7 +416,84 @@ export default function Home() {
               value={form.bebes}
               onChange={(v) => updateTicketQuantity('bebes', v)}
             />
-            
+
+            <section
+              className="rounded-xl border border-[#eadfce] bg-white/90 px-4 py-4"
+              aria-labelledby="seleccionar-monto"
+            >
+              <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <h2
+                    id="seleccionar-monto"
+                    className="text-base font-semibold text-[#24385f]"
+                  >
+                    ¿Necesitas ayuda con el valor de tus entradas?
+                  </h2>
+                  <p className="mt-1 text-sm text-[#6f6255]">
+                    Seleciona la cantidad de entradas y el monto que puedes pagar.
+                  </p>
+                </div>
+                <strong className="text-lg font-semibold tabular-nums text-[#8a641d]">
+                  {formatPrice(
+                    totalMontoEntradas > 0 ? form.aporteGratuito : 0
+                  )}
+                </strong>
+              </div>
+
+              <div className="mt-4 rounded-lg border border-[#eadfce] bg-[#fbf6ed] px-3 py-3">
+                <AmountTicketRow
+                  label="General"
+                  detail="Adultos"
+                  value={form.montoGeneral}
+                  onChange={(v) => updateTicketQuantity('montoGeneral', v)}
+                />
+                <AmountTicketRow
+                  label="Niños"
+                  detail="4 a 11 años"
+                  value={form.montoNinos}
+                  onChange={(v) => updateTicketQuantity('montoNinos', v)}
+                />
+                <AmountTicketRow
+                  label="Bebés"
+                  detail="0 a 3 años"
+                  value={form.montoBebes}
+                  onChange={(v) => updateTicketQuantity('montoBebes', v)}
+                />
+              </div>
+
+              <div className="mt-4">
+                <label htmlFor="aporteGratuito" className={labelClass}>
+                  Monto total a pagar
+                </label>
+                <div className="relative">
+                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-[#7a6c5c]">
+                    $
+                  </span>
+                  <input
+                    id="aporteGratuito"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={aporteGratuitoInput}
+                    disabled={totalMontoEntradas === 0}
+                    onFocus={(event) => {
+                      if (aporteGratuitoInput === '0') {
+                        event.currentTarget.select();
+                      }
+                    }}
+                    onChange={(event) =>
+                      updateAporteGratuito(event.target.value)
+                    }
+                    onBlur={() => {
+                      if (aporteGratuitoInput === '') {
+                        setAporteGratuitoInput('0');
+                      }
+                    }}
+                    className={`${fieldClass} pl-7 disabled:cursor-not-allowed disabled:bg-[#eee5d8] disabled:text-[#8f8272]`}
+                  />
+                </div>
+              </div>
+            </section>
           </div>
 
           <div className="mt-7 grid gap-4 border-t border-[#eadfce] pt-6">

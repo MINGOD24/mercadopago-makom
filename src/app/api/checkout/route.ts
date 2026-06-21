@@ -34,11 +34,16 @@ export async function POST(req: NextRequest) {
     const quantities = {
       general: Number(data.general) || 0,
       ninos: Number(data.ninos) || 0,
+      bebes: Number(data.bebes) || 0,
       donacion: Number(data.donacion) || 0,
-      gratuito: Number(data.gratuito) || 0,
+      montoGeneral: Number(data.montoGeneral) || 0,
+      montoNinos: Number(data.montoNinos) || 0,
+      montoBebes: Number(data.montoBebes) || 0,
     };
+    const totalMontoEntradas =
+      quantities.montoGeneral + quantities.montoNinos + quantities.montoBebes;
     const aporteGratuito =
-      quantities.gratuito > 0 ? normalizeAmount(data.aporteGratuito) : 0;
+      totalMontoEntradas > 0 ? normalizeAmount(data.aporteGratuito) : 0;
 
     const baseUrl = getBaseUrl(req);
 
@@ -75,8 +80,8 @@ export async function POST(req: NextRequest) {
 
     if (aporteGratuito > 0) {
       items.push({
-        id: 'aporte-gratuito',
-        title: 'Aporte Entrada General',
+        id: 'monto-seleccionado',
+        title: 'Entradas con monto seleccionado',
         unit_price: aporteGratuito,
         quantity: 1,
         currency_id: 'CLP',
@@ -99,8 +104,13 @@ export async function POST(req: NextRequest) {
         contacto: data.contacto,
         email: data.email,
         rut: data.rut,
-        donacion: data.donacion,
-        gratuito: data.gratuito,
+        general: quantities.general,
+        ninos: quantities.ninos,
+        bebes: quantities.bebes,
+        donacion: quantities.donacion,
+        montoGeneral: quantities.montoGeneral,
+        montoNinos: quantities.montoNinos,
+        montoBebes: quantities.montoBebes,
         aporteGratuito,
         nombres: data.nombres,
       },
