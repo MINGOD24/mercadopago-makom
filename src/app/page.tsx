@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, type ReactNode } from 'react';
 import { Plus, Minus } from 'lucide-react';
 import { PRECIOS } from '@/lib/tickets';
 import 'react-phone-number-input/style.css';
@@ -30,9 +30,16 @@ const fieldClass =
 
 const labelClass = 'mb-1.5 block text-sm font-semibold text-[#4b3d31]';
 
+const childProgramDetail = (
+  <>
+    <strong>SIN ASIENTO.</strong> Programa infantil con actividades, juegos y
+    colación.
+  </>
+);
+
 type TicketSelectorProps = {
   label: string;
-  detail?: string;
+  detail?: ReactNode;
   price: string;
   value: number;
   onChange: (val: number) => void;
@@ -101,7 +108,7 @@ function TicketSelector({
 
 type AmountTicketRowProps = {
   label: string;
-  detail: string;
+  detail?: ReactNode;
   value: number;
   onChange: (val: number) => void;
 };
@@ -116,7 +123,7 @@ function AmountTicketRow({
     <div className="flex items-center justify-between gap-3 border-t border-[#eadfce] py-3 first:border-t-0 first:pt-0 last:pb-0">
       <div className="min-w-0">
         <h3 className="text-sm font-semibold text-[#24385f]">{label}</h3>
-        <p className="mt-0.5 text-xs text-[#6f6255]">{detail}</p>
+        {detail && <p className="mt-0.5 text-xs text-[#6f6255]">{detail}</p>}
       </div>
       <div className="flex h-10 shrink-0 items-center justify-between gap-2 rounded-full border border-[#e1d3bd] bg-[#fbf6ed] p-1">
         <button
@@ -397,7 +404,7 @@ export default function Home() {
             />
             <TicketSelector
               label="Entrada Niños (4 a 11 años)"
-              detail="Programa infantil con actividades, juegos y colación. Sin asiento."
+              detail={childProgramDetail}
               price={formatPrice(PRECIOS.ninos)}
               value={form.ninos}
               onChange={(v) => updateTicketQuantity('ninos', v)}
@@ -411,7 +418,7 @@ export default function Home() {
             /> */}
             <TicketSelector
               label="Entrada Bebés (0 a 3 años)"
-              detail="Programa infantil con actividades, juegos y colación. Sin asiento."
+              detail={childProgramDetail}
               price={formatPrice(0)}
               value={form.bebes}
               onChange={(v) => updateTicketQuantity('bebes', v)}
@@ -443,19 +450,18 @@ export default function Home() {
               <div className="mt-4 rounded-lg border border-[#eadfce] bg-white/80 px-3 py-3">
                 <AmountTicketRow
                   label="Entrada General"
-                  detail=""
                   value={form.montoGeneral}
                   onChange={(v) => updateTicketQuantity('montoGeneral', v)}
                 />
                 <AmountTicketRow
                   label="Entrada Niños (4 a 11 años)"
-                  detail="Programa infantil con actividades, juegos y colación. Sin asiento."
+                  detail={childProgramDetail}
                   value={form.montoNinos}
                   onChange={(v) => updateTicketQuantity('montoNinos', v)}
                 />
                 <AmountTicketRow
                   label="Entrada Bebés (0 a 3 años)"
-                  detail="Programa infantil con actividades, juegos y colación. Sin asiento."
+                  detail={childProgramDetail}
                   value={form.montoBebes}
                   onChange={(v) => updateTicketQuantity('montoBebes', v)}
                 />

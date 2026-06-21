@@ -20,8 +20,7 @@ export default function Success() {
 
         <div className="px-6 py-7 text-center sm:px-10">
           <p className="text-base leading-relaxed text-[#5f5348] sm:text-lg">
-            Tu pago fue recibido correctamente. Te contactaremos pronto con los
-            detalles de tus lugares para Yamim Noraim.
+            Pronto te contactaremos con los detalles de Yamim Noraim y la selección de asientos para Yom Kipur.
           </p>
           <a
             href="/"
