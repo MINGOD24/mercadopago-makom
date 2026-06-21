@@ -351,13 +351,13 @@ export default function Home() {
               value={form.ninos}
               onChange={(v) => updateTicketQuantity('ninos', v)}
             />
-            <TicketSelector
+            {/* <TicketSelector
               label="Donación Entrada General"
               detail="Donación Entrada General"
               price={formatPrice(PRECIOS.donacion)}
               value={form.donacion}
               onChange={(v) => updateTicketQuantity('donacion', v)}
-            />
+            /> */}
             <TicketSelector
               label="Entrada Bebés (0 a 3 años)"
               detail="Programa infantil con actividades, juegos y colación. Sin asiento asignado."
