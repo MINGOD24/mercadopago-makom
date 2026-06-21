@@ -1,16 +1,9 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, type ReactNode } from 'react';
 import { Plus, Minus } from 'lucide-react';
-import { InfoTooltip } from '@/components/InfoTooltip';
 import { PRECIOS } from '@/lib/tickets';
 import 'react-phone-number-input/style.css';
 import PhoneInput from 'react-phone-number-input';
-
-const infoEntradas = {
-  ninos: 'Entre 4-11 años. Incluye entretención y comida. Sin asiento.',
-  bebes: 'Entre 0-3 años. Sin asiento.',
-  gratuito: 'Para personas sin posibilidad de pago.',
-};
 
 const formatPrice = (value: number) => `$${value.toLocaleString('es-CL')} CLP`;
 
@@ -43,7 +36,7 @@ type TicketSelectorProps = {
   price: string;
   value: number;
   onChange: (val: number) => void;
-  info?: string;
+  children?: ReactNode;
 };
 
 function TicketSelector({
@@ -52,7 +45,7 @@ function TicketSelector({
   price,
   value,
   onChange,
-  info,
+  children,
 }: TicketSelectorProps) {
   return (
     <article
@@ -65,7 +58,6 @@ function TicketSelector({
       <div className="min-w-0">
         <div className="flex items-center gap-2">
           <h3 className="text-base font-semibold text-[#24385f]">{label}</h3>
-          {info && <InfoTooltip info={info} />}
         </div>
         {detail && <p className="mt-1 text-sm text-[#6f6255]">{detail}</p>}
         <p className="mt-2 text-sm font-semibold text-[#8a641d]">{price}</p>
@@ -105,6 +97,7 @@ function TicketSelector({
           <Plus className="w-4 h-4" />
         </button>
       </div>
+      {children && <div className="sm:col-span-2">{children}</div>}
     </article>
   );
 }
@@ -116,6 +109,7 @@ export default function Home() {
     donacion: 0,
     bebes: 0,
     gratuito: 0,
+    aporteGratuito: 0,
     contacto: '',
     email: '',
     rut: '',
@@ -134,7 +128,8 @@ export default function Home() {
   const totalPago =
     PRECIOS.general * form.general +
     PRECIOS.ninos * form.ninos +
-    PRECIOS.donacion * form.donacion;
+    PRECIOS.donacion * form.donacion +
+    (form.gratuito > 0 ? form.aporteGratuito : 0);
 
   const totalEntradas = form.general + form.ninos + form.bebes + form.gratuito;
 
@@ -216,6 +211,7 @@ export default function Home() {
 
     const payload = {
       ...form,
+      aporteGratuito: form.gratuito > 0 ? form.aporteGratuito : 0,
       nombres: nombresFinal,
     };
 
@@ -287,11 +283,11 @@ export default function Home() {
     <div className="w-full py-6 sm:py-10">
       <section className="mx-auto w-full max-w-2xl min-w-[280px] overflow-hidden rounded-2xl border border-[#e7d9c5] bg-[#fffaf2] shadow-[0_24px_70px_rgba(47,34,20,0.14)]">
         <div className="border-b border-[#eadfce] bg-gradient-to-r from-[#fffaf2] via-[#f8eddb] to-[#fffaf2] px-5 py-6 text-center sm:px-8">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#9a6f23]">
-            Tickets para Yamim Noraim
-          </p>
+          {/* <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#9a6f23]">
+            Entradas Yamim Noraim
+          </p> */}
           <h1 className="mt-2 text-2xl font-semibold text-[#24385f] sm:text-3xl">
-            Reservá tus lugares para Rosh Hashaná y Yom Kipur
+            Entradas Yamim Noraim
           </h1>
         </div>
 
@@ -302,42 +298,74 @@ export default function Home() {
           >
             <TicketSelector
               label="Entrada general"
-              detail="Asiento para Altas Fiestas"
               price={formatPrice(PRECIOS.general)}
               value={form.general}
               onChange={(v) => updateTicketQuantity('general', v)}
             />
             <TicketSelector
-              label="Entrada niños"
-              detail="Entre 4-11 años, sin asiento"
+              label="Entrada General con aporte voluntario"
+              detail="Si hoy no te es posible pagar el valor completo, selecciona esta opción."
+              price={
+                form.gratuito > 0 && form.aporteGratuito > 0
+                  ? `Aporte total: ${formatPrice(form.aporteGratuito)}`
+                  : 'Monto a elección'
+              }
+              value={form.gratuito}
+              onChange={(v) => updateTicketQuantity('gratuito', v)}
+            >
+              {form.gratuito > 0 && (
+                <div className="rounded-lg border border-[#eadfce] bg-white/80 p-3">
+                  <label htmlFor="aporteGratuito" className={labelClass}>
+                    Monto total a pagar por estas entradas
+                  </label>
+                  <div className="relative">
+                    <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-[#7a6c5c]">
+                      $
+                    </span>
+                    <input
+                      id="aporteGratuito"
+                      type="number"
+                      min="0"
+                      step="1000"
+                      inputMode="numeric"
+                      value={form.aporteGratuito}
+                      onChange={(event) =>
+                        setForm((current) => ({
+                          ...current,
+                          aporteGratuito: Math.max(
+                            0,
+                            Math.floor(Number(event.target.value) || 0)
+                          ),
+                        }))
+                      }
+                      className={`${fieldClass} pl-7`}
+                    />
+                  </div>
+                </div>
+              )}
+            </TicketSelector>
+            <TicketSelector
+              label="Entrada Niños (4 a 11 años)"
+              detail="Programa infantil con actividades, juegos y colación. Sin asiento asignado."
               price={formatPrice(PRECIOS.ninos)}
               value={form.ninos}
               onChange={(v) => updateTicketQuantity('ninos', v)}
-              info={infoEntradas.ninos}
             />
             <TicketSelector
-              label="Donar entrada"
-              detail="Acompañá a otra persona de la comunidad"
+              label="Donación Entrada General"
+              detail="Donación Entrada General"
               price={formatPrice(PRECIOS.donacion)}
               value={form.donacion}
               onChange={(v) => updateTicketQuantity('donacion', v)}
             />
             <TicketSelector
-              label="Entrada bebés"
-              detail="Entre 0-3 años, sin asiento"
+              label="Entrada Bebés (0 a 3 años)"
+              detail="Programa infantil con actividades, juegos y colación. Sin asiento asignado."
               price={formatPrice(0)}
               value={form.bebes}
               onChange={(v) => updateTicketQuantity('bebes', v)}
-              info={infoEntradas.bebes}
             />
-            <TicketSelector
-              label="No puedo pagar"
-              detail="Para personas sin posibilidad de pago"
-              price={formatPrice(0)}
-              value={form.gratuito}
-              onChange={(v) => updateTicketQuantity('gratuito', v)}
-              info={infoEntradas.gratuito}
-            />
+            
           </div>
 
           <div className="mt-7 grid gap-4 border-t border-[#eadfce] pt-6">

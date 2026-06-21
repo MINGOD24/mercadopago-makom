@@ -51,12 +51,16 @@ async function guardarEnGoogleSheets(metadata: any, totalPagado: number) {
 
   const sheets = google.sheets({ version: 'v4', auth });
   const spreadsheetId = process.env.GOOGLE_SHEET_ID!;
+  const aporteGratuito =
+    metadata.aporteGratuito ?? metadata.aporte_gratuito ?? 0;
 
   const values = [
     [`Correo: ${metadata.email}`],
     [`Teléfono: ${metadata.contacto}`],
     [`RUT: ${metadata.rut || ''}`],
     [`Cantidad de donaciones: ${metadata.donacion || 0}`],
+    [`Cantidad de entradas con aporte voluntario: ${metadata.gratuito || 0}`],
+    [`Aporte voluntario: $${Number(aporteGratuito).toLocaleString()} CLP`],
     [`Total pagado: $${totalPagado.toLocaleString()} CLP`],
     ...metadata.nombres.map((n: any) => [
       `Nombre: ${n.nombre} | Apellido: ${n.apellido} | Género: ${n.genero} | Tipo: ${n.tipoEntrada || n.tipo_entrada}`,

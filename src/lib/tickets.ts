@@ -1,5 +1,5 @@
 export const PRECIOS = {
-  general: 1000,
-  ninos: 1000,
-  donacion: 1000,
+  general: 45000,
+  ninos: 25000,
+  donacion: 45000,
 };

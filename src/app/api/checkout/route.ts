@@ -24,6 +24,10 @@ function canAutoReturn(baseUrl: string) {
   return !/^http:\/\/(localhost|127\.|0\.0\.0\.0|\[::1\])/.test(baseUrl);
 }
 
+function normalizeAmount(value: unknown) {
+  return Math.max(0, Math.floor(Number(value) || 0));
+}
+
 export async function POST(req: NextRequest) {
   try {
     const data = await req.json();
@@ -31,7 +35,10 @@ export async function POST(req: NextRequest) {
       general: Number(data.general) || 0,
       ninos: Number(data.ninos) || 0,
       donacion: Number(data.donacion) || 0,
+      gratuito: Number(data.gratuito) || 0,
     };
+    const aporteGratuito =
+      quantities.gratuito > 0 ? normalizeAmount(data.aporteGratuito) : 0;
 
     const baseUrl = getBaseUrl(req);
 
@@ -66,6 +73,16 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    if (aporteGratuito > 0) {
+      items.push({
+        id: 'aporte-gratuito',
+        title: 'Aporte Entrada General',
+        unit_price: aporteGratuito,
+        quantity: 1,
+        currency_id: 'CLP',
+      });
+    }
+
     if (items.length === 0) {
       return NextResponse.json({ message: 'No se enviaron items válidos.' }, { status: 400 });
     }
@@ -83,6 +100,8 @@ export async function POST(req: NextRequest) {
         email: data.email,
         rut: data.rut,
         donacion: data.donacion,
+        gratuito: data.gratuito,
+        aporteGratuito,
         nombres: data.nombres,
       },
       notification_url: `${baseUrl}/api/mp-webhook`,
