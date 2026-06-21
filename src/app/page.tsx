@@ -123,6 +123,7 @@ export default function Home() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [aporteGratuitoInput, setAporteGratuitoInput] = useState('0');
   const errorRef = useRef<HTMLDivElement>(null);
 
   const totalPago =
@@ -279,6 +280,16 @@ export default function Home() {
     }
   };
 
+  const updateAporteGratuito = (value: string) => {
+    const normalized = value.replace(/\D/g, '').replace(/^0+(?=\d)/, '');
+
+    setAporteGratuitoInput(normalized);
+    setForm((current) => ({
+      ...current,
+      aporteGratuito: Math.floor(Number(normalized) || 0),
+    }));
+  };
+
   return (
     <div className="w-full py-6 sm:py-10">
       <section className="mx-auto w-full max-w-2xl min-w-[280px] overflow-hidden rounded-2xl border border-[#e7d9c5] bg-[#fffaf2] shadow-[0_24px_70px_rgba(47,34,20,0.14)]">
@@ -324,20 +335,23 @@ export default function Home() {
                     </span>
                     <input
                       id="aporteGratuito"
-                      type="number"
-                      min="0"
-                      step="1000"
+                      type="text"
                       inputMode="numeric"
-                      value={form.aporteGratuito}
+                      pattern="[0-9]*"
+                      value={aporteGratuitoInput}
+                      onFocus={(event) => {
+                        if (aporteGratuitoInput === '0') {
+                          event.currentTarget.select();
+                        }
+                      }}
                       onChange={(event) =>
-                        setForm((current) => ({
-                          ...current,
-                          aporteGratuito: Math.max(
-                            0,
-                            Math.floor(Number(event.target.value) || 0)
-                          ),
-                        }))
+                        updateAporteGratuito(event.target.value)
                       }
+                      onBlur={() => {
+                        if (aporteGratuitoInput === '') {
+                          setAporteGratuitoInput('0');
+                        }
+                      }}
                       className={`${fieldClass} pl-7`}
                     />
                   </div>
