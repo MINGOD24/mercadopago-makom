@@ -11,7 +11,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-screen flex flex-col">
         <header className="w-full bg-[#fffaf2] shadow-[0_1px_18px_rgba(47,34,20,0.12)]">
           <img
-            src="/makom-yamim-noraim-2026.jpeg"
+            src="/funnel.jpeg"
             alt="Makom Yamim Noraim 2026"
             className="block w-full h-auto object-cover"
           />
