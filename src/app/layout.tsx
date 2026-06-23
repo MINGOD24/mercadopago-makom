@@ -1,7 +1,7 @@
 import './globals.css';
 
 export const metadata = {
-  title: 'Makom Tickets 2025',
+  title: 'Makom Tickets 2026',
   description: 'Compra de entradas para los Yamim Noraim',
 };
 
