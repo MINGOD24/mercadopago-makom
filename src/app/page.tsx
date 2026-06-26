@@ -383,12 +383,15 @@ export default function Home() {
     <div className="w-full py-6 sm:py-10">
       <section className="mx-auto w-full max-w-2xl min-w-[280px] overflow-hidden rounded-2xl border border-[#e7d9c5] bg-[#fffaf2] shadow-[0_24px_70px_rgba(47,34,20,0.14)]">
         <div className="border-b border-[#eadfce] bg-gradient-to-r from-[#fffaf2] via-[#f8eddb] to-[#fffaf2] px-5 py-6 text-center sm:px-8">
-          {/* <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#9a6f23]">
-            Entradas Yamim Noraim
-          </p> */}
           <h1 className="mt-2 text-2xl font-semibold text-[#24385f] sm:text-3xl">
             Entradas Yamim Noraim
           </h1>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#9a6f23]">
+            Rosh Hashana: en Makom
+          </p>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#9a6f23]">
+            Yom Kipur: en Hotel Sheraton
+          </p>
         </div>
 
         <div className="p-5 sm:p-8">
